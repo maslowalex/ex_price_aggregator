@@ -27,11 +27,13 @@ defmodule ExPriceAggregator.Kraken do
     {:ok, state}
   end
 
-  def handle_event([_, trades, "trade", _] = event, state) do
+  def handle_event([_, trades, "trade", _] = _event, state) do
     trades
     |> Enum.map(fn trade ->
+      {price, _} = trade |> Enum.at(0) |> Float.parse()
+
       trade_event = %ExPriceAggregator.Kraken.TradeEvent{
-        price: Enum.at(trade, 0),
+        price: price,
         volume: Enum.at(trade, 1),
         time: Enum.at(trade, 2),
         side: Enum.at(trade, 3),
@@ -54,7 +56,7 @@ defmodule ExPriceAggregator.Kraken do
     {:ok, state}
   end
 
-  def handle_event(event, state) do
+  def handle_event(_event, state) do
     {:ok, state}
   end
 

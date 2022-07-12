@@ -23,12 +23,14 @@ defmodule ExPriceAggregator.Binance do
   end
 
   def handle_event(%{"e" => "trade"} = event, state) do
+    {price, _} = Float.parse(event["p"])
+
     trade_event = %ExPriceAggregator.Binance.TradeEvent{
       event_type: event["e"],
       event_time: event["E"],
       symbol: event["s"],
       trade_id: event["t"],
-      price: event["p"],
+      price: price,
       quantity: event["q"],
       buyer_order_id: event["b"],
       seller_order_id: event["a"],
