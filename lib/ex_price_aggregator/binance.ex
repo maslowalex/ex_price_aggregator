@@ -9,7 +9,8 @@ defmodule ExPriceAggregator.Binance do
     WebSockex.start_link(
       "#{@stream_endpoint}#{symbol}@trade",
       __MODULE__,
-      symbol
+      symbol,
+      name: ExPriceAggregator.via_tuple(__MODULE__, symbol)
     )
   end
 

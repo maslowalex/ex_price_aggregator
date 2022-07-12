@@ -9,7 +9,8 @@ defmodule ExPriceAggregator.Kraken do
     {:ok, pid} = WebSockex.start_link(
       "#{@stream_endpoint}",
       __MODULE__,
-      symbol
+      symbol,
+      name: ExPriceAggregator.via_tuple(__MODULE__, symbol)
     )
 
     kraken_name = symbol |> String.upcase |> String.replace_suffix("USDT", "/USD")

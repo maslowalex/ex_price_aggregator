@@ -9,7 +9,8 @@ defmodule ExPriceAggregator.Huobi do
     {:ok, pid} = WebSockex.start_link(
       "#{@stream_endpoint}",
       __MODULE__,
-      symbol
+      symbol,
+      name: ExPriceAggregator.via_tuple(__MODULE__, symbol)
     )
 
     WebSockex.send_frame(pid, {:text, Jason.encode!(%{sub: "market.#{symbol}.ticker", id: "exid-1"})})
