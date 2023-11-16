@@ -6,14 +6,18 @@ defmodule ExPriceAggregator.Huobi do
   @stream_endpoint "wss://api.huobi.pro/ws"
 
   def start_link(symbol) do
-    {:ok, pid} = WebSockex.start_link(
-      "#{@stream_endpoint}",
-      __MODULE__,
-      symbol,
-      name: ExPriceAggregator.via_tuple(__MODULE__, symbol)
-    )
+    {:ok, pid} =
+      WebSockex.start_link(
+        "#{@stream_endpoint}",
+        __MODULE__,
+        symbol,
+        name: ExPriceAggregator.via_tuple(__MODULE__, symbol)
+      )
 
-    WebSockex.send_frame(pid, {:text, Jason.encode!(%{sub: "market.#{symbol}.ticker", id: "exid-1"})})
+    WebSockex.send_frame(
+      pid,
+      {:text, Jason.encode!(%{sub: "market.#{symbol}.ticker", id: "exid-1"})}
+    )
 
     {:ok, pid}
   end

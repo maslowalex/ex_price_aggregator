@@ -3,18 +3,26 @@ defmodule ExPriceAggregator.Kraken do
 
   require Logger
 
+  alias ExPriceAggregator.PubSub
+
   @stream_endpoint "wss://ws.kraken.com"
 
-  def start_link(symbol) do
-    {:ok, pid} = WebSockex.start_link(
-      "#{@stream_endpoint}",
-      __MODULE__,
-      symbol,
-      name: ExPriceAggregator.via_tuple(__MODULE__, symbol)
-    )
+  def start_link(opts \\ []) do
+    base = Keyword.fetch!(opts, :base)
+    quote_c = Keyword.fetch!(opts, :quote)
+    type = Keyword.get(opts, :type, :trades)
+    symbol = ExPriceAggregator.symbol(base, quote_c)
 
-    kraken_name = symbol |> String.upcase |> String.replace_suffix("USDT", "/USD")
-    WebSockex.send_frame(pid, {:text, subscritpion_payload(kraken_name)})
+    {:ok, pid} =
+      WebSockex.start_link(
+        "#{@stream_endpoint}",
+        __MODULE__,
+        symbol,
+        name: ExPriceAggregator.via_tuple(__MODULE__, symbol, type)
+      )
+
+    kraken_name = symbol |> String.upcase() |> String.replace_suffix("USDT", "/USD")
+    WebSockex.send_frame(pid, {:text, subscritpion_payload(type, kraken_name)})
 
     {:ok, pid}
   end
@@ -38,7 +46,7 @@ defmodule ExPriceAggregator.Kraken do
         volume: Enum.at(trade, 1),
         time: Enum.at(trade, 2),
         side: Enum.at(trade, 3),
-        order_type: (if Enum.at(trade, 4) == "b", do: :buy, else: :sell),
+        order_type: if(Enum.at(trade, 4) == "b", do: :buy, else: :sell),
         misc: Enum.at(trade, 5)
       }
 
@@ -46,12 +54,8 @@ defmodule ExPriceAggregator.Kraken do
         "Trade event received " <>
           "kraken:#{state}@#{trade_event.price}"
       )
-  
-      Phoenix.PubSub.broadcast(
-        ExPriceAggregator.PubSub,
-        "trade:kraken:#{state}",
-        trade_event
-      )
+
+      PubSub.broadcast_trade(:kraken, state, trade_event)
     end)
 
     {:ok, state}
@@ -61,13 +65,14 @@ defmodule ExPriceAggregator.Kraken do
     {:ok, state}
   end
 
-  defp subscritpion_payload(pair) do
+  defp subscritpion_payload(:trades, pair) do
     %{
       event: "subscribe",
       pair: [pair],
       subscription: %{
         name: "trade"
       }
-    } |> Jason.encode!
+    }
+    |> Jason.encode!()
   end
 end

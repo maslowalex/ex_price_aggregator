@@ -5,7 +5,7 @@ defmodule ExPriceAggregator.MixProject do
     [
       app: :ex_price_aggregator,
       version: "0.1.0",
-      elixir: "~> 1.14.2",
+      elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -25,7 +25,8 @@ defmodule ExPriceAggregator.MixProject do
       {:websockex, "~> 0.4.3"},
       {:phoenix_pubsub, "~> 2.0"},
       {:jason, "~> 1.2"},
-      {:stream_gzip, "~> 0.4"}
+      {:stream_gzip, "~> 0.4"},
+      {:decimal, "~> 2.1"}
     ]
   end
 end
