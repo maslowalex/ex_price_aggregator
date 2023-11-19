@@ -26,7 +26,8 @@ defmodule ExPriceAggregator.MixProject do
       {:phoenix_pubsub, "~> 2.0"},
       {:jason, "~> 1.2"},
       {:stream_gzip, "~> 0.4"},
-      {:decimal, "~> 2.1"}
+      {:decimal, "~> 2.1"},
+      {:finch, "~> 0.16.0"}
     ]
   end
 end

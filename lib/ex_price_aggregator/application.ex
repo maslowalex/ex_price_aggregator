@@ -13,7 +13,8 @@ defmodule ExPriceAggregator.Application do
         name: ExPriceAggregator.PubSub, adapter_name: Phoenix.PubSub.PG2
       },
       {DynamicSupervisor, strategy: :one_for_one, name: ExPriceAggregator.DynamicSupervisor},
-      {Registry, [keys: :unique, name: ExPriceAggregator.ExchangeRegistry]}
+      {Registry, [keys: :unique, name: ExPriceAggregator.ExchangeRegistry]},
+      {Finch, name: ExPriceAggregator.Finch}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

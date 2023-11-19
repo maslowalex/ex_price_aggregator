@@ -17,6 +17,12 @@ defmodule ExPriceAggregator.PubSub do
     )
   end
 
+  def subscribe_trades(exchange, base_currency, quote_currency) do
+    symbol = ExPriceAggregator.symbol(base_currency, quote_currency)
+
+    subscribe_trades(exchange, symbol)
+  end
+
   def subscribe_trades(exchange, symbol) do
     Phoenix.PubSub.subscribe(
       ExPriceAggregator.PubSub,
