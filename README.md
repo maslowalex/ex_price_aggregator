@@ -1,14 +1,12 @@
 # ExPriceAggregator
 
-To start price aggregator logging simply run:
+To subscribe to websocket feed of one of the 4 exchanges use:
 
 ```elixir
-symbol = "btcusdt"
+{:ok, pid} = ExPriceAggregator.track_trades(:okex, "btc", "usdt")
 
-ExPriceAggregator.aggregate(symbol)
+:ok = ExPriceAggregator.untrack_trades(:okex, "btc", "usdt")
 ```
-
-Symbol is expeced to be a *lowercase* string
 
 ## Installation
 
