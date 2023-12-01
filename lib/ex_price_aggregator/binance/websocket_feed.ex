@@ -5,21 +5,23 @@ defmodule ExPriceAggregator.Binance.WebsocketFeed do
 
   alias ExPriceAggregator.PubSub
 
+  alias ExPriceAggregator.Binance.TradeEvent
+
+  defmodule State do
+    defstruct [:symbol, :timeframe, :type]
+  end
+
   @stream_endpoint "wss://stream.binance.com:9443/ws/"
 
   def start_link(opts) do
     base = Keyword.fetch!(opts, :base)
     quote_c = Keyword.fetch!(opts, :quote)
     type = Keyword.get(opts, :type, :trades)
-
+    timeframe = Keyword.get(opts, :timeframe)
     symbol = ExPriceAggregator.symbol(base, quote_c)
+    state = %State{symbol: symbol, timeframe: timeframe, type: type}
 
-    WebSockex.start_link(
-      "#{@stream_endpoint}#{String.downcase(symbol)}@trade",
-      __MODULE__,
-      symbol,
-      name: ExPriceAggregator.via_tuple(:binance, symbol, type)
-    )
+    start_socket(state)
   end
 
   def handle_frame({_type, msg}, state) do
@@ -32,26 +34,45 @@ defmodule ExPriceAggregator.Binance.WebsocketFeed do
   end
 
   def handle_event(%{"e" => "trade"} = event, state) do
-    {price, _} = Float.parse(event["p"])
-
-    trade_event = %ExPriceAggregator.Binance.TradeEvent{
-      event_type: event["e"],
-      event_time: event["E"],
-      symbol: event["s"],
-      trade_id: event["t"],
-      price: price,
-      quantity: event["q"],
-      buyer_order_id: event["b"],
-      seller_order_id: event["a"],
-      trade_time: event["T"],
-      buyer_market_maker: event["m"]
-    }
+    trade_event = TradeEvent.new(event)
 
     Logger.debug(
       "Trade event received " <>
-        "binance:#{state}@#{trade_event.price}"
+        "binance:#{state.symbol}@#{trade_event.price}"
     )
 
-    PubSub.broadcast_trade(:binance, state, trade_event)
+    PubSub.broadcast_trade(:binance, state.symbol, trade_event)
+  end
+
+  def handle_event(%{"e" => "kline", "k" => event}, state) do
+    kline_event =
+      event
+      |> ExPriceAggregator.Binance.KlineEvent.new()
+      |> ExPriceAggregator.Binance.KlineEvent.to_generic()
+
+    Logger.debug(
+      "Candle update received for tf: #{state.timeframe} " <>
+        "binance:#{state.symbol}@#{kline_event.close}"
+    )
+
+    PubSub.broadcast_candle(:binance, state.symbol, kline_event, state.timeframe)
+  end
+
+  defp start_socket(%State{type: :trades, symbol: symbol} = state) do
+    WebSockex.start_link(
+      "#{@stream_endpoint}#{String.downcase(symbol)}@trade",
+      __MODULE__,
+      state,
+      name: ExPriceAggregator.via_tuple(:binance, symbol, :trades)
+    )
+  end
+
+  defp start_socket(%State{type: :candles, symbol: symbol, timeframe: tf} = state) do
+    WebSockex.start_link(
+      "#{@stream_endpoint}#{String.downcase(symbol)}@kline_#{tf}",
+      __MODULE__,
+      state,
+      name: ExPriceAggregator.via_tuple(:binance, symbol, :trades, tf)
+    )
   end
 end

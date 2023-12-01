@@ -5,15 +5,15 @@ defmodule ExPriceAggregator.PubSub do
     Phoenix.PubSub.broadcast(
       ExPriceAggregator.PubSub,
       "trade:#{exchange}:#{symbol}",
-      trade_event
+      {:trade, trade_event}
     )
   end
 
-  def broadcast_candle(exchange, symbol, candle_event) do
+  def broadcast_candle(exchange, symbol, candle_event, tf) do
     Phoenix.PubSub.broadcast(
       ExPriceAggregator.PubSub,
-      "candle:#{exchange}:#{symbol}",
-      candle_event
+      "candle#{tf}:#{exchange}:#{symbol}",
+      {:candle, candle_event}
     )
   end
 
@@ -28,5 +28,20 @@ defmodule ExPriceAggregator.PubSub do
       ExPriceAggregator.PubSub,
       "trade:#{exchange}:#{symbol}"
     )
+  end
+
+  def subscribe_candles(exchange, symbol, tf \\ "1m")
+
+  def subscribe_candles(exchange, symbol, tf) do
+    Phoenix.PubSub.subscribe(
+      ExPriceAggregator.PubSub,
+      "candle#{tf}:#{exchange}:#{symbol}"
+    )
+  end
+
+  def subscribe_candles(exchange, base_currency, quote_currency, tf) do
+    symbol = ExPriceAggregator.symbol(base_currency, quote_currency)
+
+    subscribe_candles(exchange, symbol, tf)
   end
 end

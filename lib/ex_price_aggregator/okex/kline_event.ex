@@ -26,6 +26,9 @@ defmodule ExPriceAggregator.Okex.KlineEvent do
         [:ts, y] ->
           {:ts, String.to_integer(y)}
 
+        [:confirm, y] ->
+          {:confirm, y == "1"}
+
         [x, y] ->
           {x, Decimal.new(y)}
       end
