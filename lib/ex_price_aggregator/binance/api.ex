@@ -1,8 +1,8 @@
 defmodule ExPriceAggregator.Binance.API do
   alias ExPriceAggregator.Binance.KlineEvent
 
-  def get_candles(base_currency, quote_currency, opts) do
-    build_get_candles(base_currency, quote_currency, opts)
+  def get_candles(%Finch.Request{} = request) do
+    request
     |> Finch.request(ExPriceAggregator.Finch)
     |> handle_response()
   end
@@ -12,7 +12,10 @@ defmodule ExPriceAggregator.Binance.API do
     limit = Keyword.fetch!(opts, :limit)
     url = url(:candles, blessed_symbol(base_currency, quote_currency), timeframe, limit)
 
-    Finch.build(:get, url)
+    :get
+    |> Finch.build(url)
+    |> Finch.Request.put_private(:num_of_requests, 1)
+    |> Finch.Request.put_private(:weight, 2)
   end
 
   def blessed_symbol(b, q) do

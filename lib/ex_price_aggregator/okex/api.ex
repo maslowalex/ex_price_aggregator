@@ -4,39 +4,24 @@ defmodule ExPriceAggregator.Okex.API do
   @endpoint "https://www.okx.com/api/v5/market/history-candles"
   @api_batch_limit 100
 
-  def get_candles(base_currency, quote_currency, opts) do
-    num_of_requests = ceil(Keyword.get(opts, :limit, 100) / @api_batch_limit)
-
-    build_get_candles(base_currency, quote_currency, opts)
+  def get_candles(%Finch.Request{} = request, candles \\ []) do
+    request
     |> Finch.request(ExPriceAggregator.Finch)
     |> handle_response()
     |> case do
-      {:ok, candles, latest_ts} ->
-        opts = Keyword.put(opts, :after, latest_ts)
-        get_candles(base_currency, quote_currency, opts, num_of_requests - 1, candles)
+      {:ok, new_candles} ->
+        num_of_requests = request.private.num_of_requests - 1
+        aggregated_candles = candles ++ new_candles
 
-      error ->
-        error
-    end
-  end
+        if num_of_requests > 0 do
+          request
+          |> Finch.Request.put_private(:num_of_requests, num_of_requests)
+          |> get_candles(aggregated_candles)
+        else
+          {:ok, aggregated_candles}
+        end
 
-  def get_candles(_, _, _, 0, candles), do: {:ok, candles}
-
-  def get_candles(base_currency, quote_currency, opts, num_of_requests, candles) do
-    build_get_candles(base_currency, quote_currency, opts)
-    |> Finch.request(ExPriceAggregator.Finch)
-    |> handle_response()
-    |> case do
-      {:ok, new_candles, latest_ts} ->
-        get_candles(
-          base_currency,
-          quote_currency,
-          Keyword.put(opts, :after, latest_ts),
-          num_of_requests - 1,
-          candles ++ new_candles
-        )
-
-      error ->
+      {:error, _} = error ->
         error
     end
   end
@@ -45,8 +30,12 @@ defmodule ExPriceAggregator.Okex.API do
     timeframe = Keyword.get(opts, :timeframe, :"1m")
     after_ts = Keyword.get(opts, :after, nil)
     url = url(base_currency, quote_currency, timeframe, after_ts)
+    num_of_requests = ceil(Keyword.get(opts, :limit, 100) / @api_batch_limit)
 
-    Finch.build(:get, url)
+    :get
+    |> Finch.build(url)
+    |> Finch.Request.put_private(:num_of_requests, num_of_requests)
+    |> Finch.Request.put_private(:weight, 1)
   end
 
   def blessed_symbol(b, q) do
@@ -72,9 +61,7 @@ defmodule ExPriceAggregator.Okex.API do
       |> Map.fetch!("data")
       |> Enum.map(&KlineEvent.new/1)
 
-    latest_ts = candles |> Enum.at(-1) |> Map.fetch!(:ts)
-
-    {:ok, candles, latest_ts}
+    {:ok, candles}
   end
 
   def handle_response(error), do: error

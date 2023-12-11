@@ -76,14 +76,17 @@ defmodule ExPriceAggregator do
     end
   end
 
-    @doc """
+  @doc """
   Finds and kills the process that is subscribed to the trades channel of the exchange.
   """
   @spec untrack_candles(exchange, currency, currency, timeframe()) :: :ok | :noproc
   def untrack_candles(exchange, base_currency, quote_currency, tf) do
     symbol = ExPriceAggregator.symbol(base_currency, quote_currency)
 
-    case Registry.lookup(ExPriceAggregator.ExchangeRegistry, "#{exchange}@#{symbol}@candles@#{tf}") do
+    case Registry.lookup(
+           ExPriceAggregator.ExchangeRegistry,
+           "#{exchange}@#{symbol}@candles@#{tf}"
+         ) do
       [{pid, _}] ->
         DynamicSupervisor.terminate_child(ExPriceAggregator.DynamicSupervisor, pid)
 
