@@ -1,6 +1,12 @@
 defmodule ExPriceAggregator.Binance.API do
   alias ExPriceAggregator.Binance.KlineEvent
 
+  def get_candles(base_currency, quote_currency, opts) do
+    request = build_get_candles(base_currency, quote_currency, opts)
+
+    get_candles(request)
+  end
+
   def get_candles(%Finch.Request{} = request) do
     request
     |> Finch.request(ExPriceAggregator.Finch)
