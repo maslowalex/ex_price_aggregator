@@ -58,6 +58,14 @@ defmodule ExPriceAggregator.Binance.WebsocketFeed do
     PubSub.broadcast_candle(:binance, state.symbol, kline_event, state.timeframe)
   end
 
+  def handle_event(%{"ping" => payload}, state) do
+    Logger.notice("Received ping: #{payload}")
+
+    frame = {:text, Jason.encode!(%{pong: payload})}
+
+    {:reply, frame, state}
+  end
+
   defp start_socket(%State{type: :trades, symbol: symbol} = state) do
     WebSockex.start_link(
       "#{@stream_endpoint}#{String.downcase(symbol)}@trade",
