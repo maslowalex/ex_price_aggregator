@@ -23,6 +23,7 @@ defmodule ExPriceAggregator.MixProject do
   defp deps do
     [
       {:websockex, "~> 0.4.3"},
+      {:fresh, "~> 0.4.4"},
       {:phoenix_pubsub, "~> 2.0"},
       {:jason, "~> 1.2"},
       {:stream_gzip, "~> 0.4"},

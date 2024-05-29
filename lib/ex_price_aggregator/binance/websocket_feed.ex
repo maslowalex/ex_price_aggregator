@@ -1,5 +1,5 @@
 defmodule ExPriceAggregator.Binance.WebsocketFeed do
-  use WebSockex
+  use Fresh
 
   require Logger
 
@@ -24,7 +24,7 @@ defmodule ExPriceAggregator.Binance.WebsocketFeed do
     start_socket(state)
   end
 
-  def handle_frame({_type, msg}, state) do
+  def handle_in({:text, msg}, state) do
     case Jason.decode(msg) do
       {:ok, event} -> handle_event(event, state)
       {:error, _} -> throw("Unable to parse msg: #{msg}")
@@ -61,13 +61,15 @@ defmodule ExPriceAggregator.Binance.WebsocketFeed do
   def handle_event(%{"ping" => payload}, state) do
     Logger.notice("Received ping: #{payload}")
 
+    System.cmd("say", ["pong"])
+
     frame = {:text, Jason.encode!(%{pong: payload})}
 
-    {:reply, frame, state}
+    {:reply, [frame], state}
   end
 
   defp start_socket(%State{type: :trades, symbol: symbol} = state) do
-    WebSockex.start_link(
+    Fresh.start_link(
       "#{@stream_endpoint}#{String.downcase(symbol)}@trade",
       __MODULE__,
       state,
@@ -76,7 +78,7 @@ defmodule ExPriceAggregator.Binance.WebsocketFeed do
   end
 
   defp start_socket(%State{type: :candles, symbol: symbol, timeframe: tf} = state) do
-    WebSockex.start_link(
+    Fresh.start_link(
       "#{@stream_endpoint}#{String.downcase(symbol)}@kline_#{tf}",
       __MODULE__,
       state,

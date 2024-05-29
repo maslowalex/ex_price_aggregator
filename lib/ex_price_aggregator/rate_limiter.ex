@@ -25,11 +25,11 @@ defmodule ExPriceAggregator.RateLimiter do
     {:ok, state}
   end
 
-  def handle_call({:request, request, _hm, _fn}, from, %{tokens: 0} = state) do
+  def handle_call({:request, _request, _hm, _fn}, _from, %{tokens: 0} = state) do
     {:reply, {:error, :rate_limited}, state}
   end
 
-  def handle_call({:request, request, hm, fun}, from, state) do
+  def handle_call({:request, request, hm, fun}, _from, state) do
     tokens_left = calculate_tokens_left(request, state)
 
     case tokens_left do
