@@ -1,5 +1,16 @@
 defmodule ExPriceAggregator.Okex.KlineEvent do
-  @enforce_keys [:ts, :open, :high, :low, :close, :volCcyQuote, :volCcy, :vol, :confirm]
+  @enforce_keys [
+    :ts,
+    :open,
+    :high,
+    :low,
+    :close,
+    :volCcyQuote,
+    :volCcy,
+    :vol,
+    :confirm,
+    :timeframe
+  ]
   defstruct @enforce_keys
 
   def attributes, do: @enforce_keys

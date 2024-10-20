@@ -21,7 +21,7 @@ defmodule ExPriceAggregator.Binance.TradeEvent do
       symbol: attributes["s"],
       trade_id: attributes["t"],
       price: Decimal.new(attributes["p"]),
-      quantity: attributes["q"],
+      quantity: Decimal.new(attributes["q"]),
       buyer_order_id: attributes["b"],
       seller_order_id: attributes["a"],
       trade_time: attributes["T"],

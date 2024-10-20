@@ -13,7 +13,7 @@ defmodule ExPriceAggregator.PubSub do
     Phoenix.PubSub.broadcast(
       ExPriceAggregator.PubSub,
       "candle#{tf}:#{exchange}:#{symbol}",
-      {:candle, candle_event}
+      {:candle, tf, candle_event}
     )
   end
 

@@ -5,6 +5,8 @@ defmodule ExPriceAggregator.Kraken.WebsocketFeed do
 
   alias ExPriceAggregator.PubSub
 
+  alias ExPriceAggregator.Kraken.TradeEvent
+
   @stream_endpoint "wss://ws.kraken.com"
 
   def start_link(opts \\ []) do
@@ -39,16 +41,7 @@ defmodule ExPriceAggregator.Kraken.WebsocketFeed do
   def handle_event([_, trades, "trade", _] = _event, state) do
     trades
     |> Enum.map(fn trade ->
-      {price, _} = trade |> Enum.at(0) |> Float.parse()
-
-      trade_event = %ExPriceAggregator.Kraken.TradeEvent{
-        price: price,
-        volume: Enum.at(trade, 1),
-        time: Enum.at(trade, 2),
-        side: Enum.at(trade, 3),
-        order_type: if(Enum.at(trade, 4) == "b", do: :buy, else: :sell),
-        misc: Enum.at(trade, 5)
-      }
+      trade_event = TradeEvent.new(trade)
 
       Logger.debug(
         "Trade event received " <>

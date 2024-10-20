@@ -49,15 +49,34 @@ defmodule ExPriceAggregator do
     # https://www.okx.com/docs-v5/en/#order-book-trading-market-data-ws-candlesticks-channel
     exchange_mod = supported_exchanges() |> Map.fetch!(exchange)
     symbol = ExPriceAggregator.symbol(base_currency, quote_currency)
+    manager_name = ExPriceAggregator.WebsocketManager.name(exchange, symbol)
 
-    child_spec = %{
-      id: "#{exchange}:#{symbol}:candles#{tf}",
-      start:
-        {exchange_mod, :subscribe_to_feed,
-         [[base: base_currency, quote: quote_currency, type: :candles, timeframe: tf]]}
-    }
+    case Process.whereis(manager_name) do
+      nil ->
+        child_spec = %{
+          id: "#{exchange}:#{symbol}:candles",
+          start:
+            {exchange_mod, :subscribe_to_feed,
+             [[base: base_currency, quote: quote_currency, type: :candles, timeframe: tf]]}
+        }
 
-    DynamicSupervisor.start_child(ExPriceAggregator.DynamicSupervisor, child_spec)
+        manager_opts = [
+          child_spec: child_spec,
+          exchange: exchange,
+          symbol: symbol,
+          timeframe: tf
+        ]
+
+        DynamicSupervisor.start_child(
+          ExPriceAggregator.DynamicSupervisor,
+          {ExPriceAggregator.WebsocketManager, manager_opts}
+        )
+
+      pid ->
+        :ok = ExPriceAggregator.WebsocketManager.subscribe(exchange, symbol, tf)
+
+        {:ok, pid}
+    end
   end
 
   @doc """
@@ -98,6 +117,10 @@ defmodule ExPriceAggregator do
   @doc """
   Unified way of building a `via` tuple for the registry.
   """
+  def via_tuple(exchange, symbol) do
+    {:via, Registry, {ExPriceAggregator.ExchangeRegistry, "#{exchange}@#{symbol}"}}
+  end
+
   def via_tuple(exchange, symbol, type) do
     {:via, Registry, {ExPriceAggregator.ExchangeRegistry, "#{exchange}@#{symbol}@#{type}"}}
   end

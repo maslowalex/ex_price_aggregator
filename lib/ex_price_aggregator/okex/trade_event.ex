@@ -7,7 +7,7 @@ defmodule ExPriceAggregator.Okex.TradeEvent do
 
   def new(raw_payload) when is_map(raw_payload) do
     %__MODULE__{
-      instrument_id: raw_payload["instId"],
+      instrument_id: Map.fetch!(raw_payload, "instId"),
       trade_id: raw_payload["tradeId"],
       price: Decimal.new(raw_payload["px"]),
       size: Decimal.new(raw_payload["sz"]),
